@@ -874,49 +874,7 @@
       };
     }
 
-    async function generateAIImage(finalPrompt, targetAspect) {
-      // 1차: gemini-3.1-flash-image
-      try {
-        const url1 = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
-        const payload1 = {
-          contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
-          generationConfig: {
-            responseModalities: ["IMAGE"],
-            imageConfig: { aspectRatio: targetAspect }
-          }
-        };
-        const res1 = await fetchWithRetry(url1, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload1)
-        }, 2);
-        const part1 = res1?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-        if (part1?.inlineData?.data) {
-          return `data:${part1.inlineData.mimeType || "image/png"};base64,${part1.inlineData.data}`;
-        }
-      } catch (_) {}
-
-      // 2차: gemini-3.1-flash-lite-image
-      const url2 = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
-      const orientHint = targetAspect === "4:3" ? "Horizontal 4:3 composition: " : "Vertical 3:4 portrait composition: ";
-      const payload2 = {
-        contents: [{ parts: [{ text: orientHint + finalPrompt }] }],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"]
-        }
-      };
-      const res2 = await fetchWithRetry(url2, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload2)
-      }, 2);
-      const part2 = res2?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-      if (part2?.inlineData?.data) {
-        return `data:${part2.inlineData.mimeType || "image/png"};base64,${part2.inlineData.data}`;
-      }
-
-      throw new Error("Image generation returned empty");
-    }
+    async function generateAIImage(finalPrompt, targetAspect) { const savedKey = (typeof apiKey !== "undefined" && apiKey) ? apiKey : (localStorage.getItem("hangyeol_gemini_key") || ""); if (savedKey) { try { const url1 = https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${savedKey}; const res1 = await fetchWithRetry(url1, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: finalPrompt }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: targetAspect } } }) }, 1); const part1 = res1?.candidates?.[0]?.content?.parts?.find(p => p.inlineData); if (part1?.inlineData?.data) return data:${part1.inlineData.mimeType \vert{}\vert{} "image/png"};base64,${part1.inlineData.data}; } catch (_) {} } const w = targetAspect === "4:3" ? 960 : 768; const h = targetAspect === "4:3" ? 720 : 960; const cleanPrompt = finalPrompt.slice(0, 500); for (const mdl of ["flux", "turbo"]) { try { const seed = Math.floor(Math.random() * 999999) + 1; const freeUrl = https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${w}&height=${h}&seed=${seed}&model=${mdl}&nologo=true; const resp = await fetch(freeUrl); if (!resp.ok) continue; const blob = await resp.blob(); if (!blob || !blob.type.startsWith("image/")) continue; return await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); } catch (_) {} } throw new Error("Image generation returned empty"); }
 
     async function runCaptureOrSketch(isRetry = false) {
       if (state.isGenerating) return;
