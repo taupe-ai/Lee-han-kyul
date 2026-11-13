@@ -395,6 +395,7 @@
               <span id="stage-dot" class="w-2.5 h-2.5 rounded-full bg-[#ff922b]"></span>
               <span id="stage-status" class="font-bold">폴라로이드 대기 중 · 촬영 버튼을 눌러보세요!</span>
             </div>
+            <span id="stage-spec" class="text-[11px] text-[#c9a889]">원본 비율 100% 무왜곡 인화 엔진 적용</span>
           </div>
 
           <!-- 반응형 미리보기 뷰포트 -->
@@ -406,8 +407,16 @@
           </div>
         </div>
 
-        <!-- 하단 저장 액션 바 & 타임스탬프 파일명 안내 -->
-        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 shadow-xs"><button id="btn-download-bottom" type="button" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#ff922b] to-[#ff6b8b] hover:brightness-105 text-white text-sm sm:text-[15px] font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"><span>💾</span> 지금 보이는 스틸컷 저장하기</button></div>
+        <!-- 하단 저장 액션 바 -->
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 sm:p-5 shadow-xs">
+          <button
+            id="btn-download-bottom"
+            type="button"
+            class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#ff922b] to-[#ff6b8b] hover:brightness-105 text-white text-sm sm:text-[15px] font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>💾</span> 지금 보이는 스틸컷 저장하기
+          </button>
+        </div>
 
       </section>
     </div>
@@ -836,45 +845,166 @@
       }
     }
 
+    function mapKoreanSceneKeywords(kor) {
+      const t = String(kor || "");
+      const parts = ["POV shot", HANGYEOL_BASE];
+      if (/치즈|고양이|뚱냥/.test(t)) parts.push("a chubby cream-beige British Shorthair cat nearby");
+      if (/앞치마/.test(t)) parts.push("wearing a beige checkered apron over casual knitwear");
+      else if (/침실|침대|밤|새벽|무드등|키스/.test(t)) parts.push("wearing a loosely unbuttoned soft lounge shirt");
+      else parts.push("wearing a cozy warm cream knit sweater");
+
+      if (/주방|부엌|요리|갈비찜|쿠키|베이킹|식탁/.test(t)) {
+        parts.push("in a sunlit cozy modern open kitchen, holding homemade food lovingly toward viewer");
+      } else if (/침실|침대|밤|무드등/.test(t)) {
+        parts.push("in a cozy master bedroom under warm golden-amber bedside lamp light at night, leaning close with deep affectionate gaze");
+      } else if (/소파|파업|거실/.test(t)) {
+        parts.push("lying across a plush ivory fabric sofa in a sunlit living room, cute pouting blush while gently holding viewer's hands");
+      } else {
+        parts.push("in a warm sunlit cozy Korean home interior, looking at viewer with a sweet eye-smile");
+      }
+      return parts.join(", ");
+    }
+
     async function buildSubjectFromKorean(koreanText) {
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-      const sysPrompt = `Convert the Korean scene into an English visual scene description (ONLY describe characters, pose, expression, clothing, setting, and lighting — DO NOT include art style words like 'webtoon' or 'anime'). Always include Lee Han-gyeol's appearance (${HANGYEOL_BASE}). If '치즈' (Cheese) appears, describe it as 'a chubby cream-beige British Shorthair cat'. Unless user's appearance is explicitly described, use natural POV framing so random hair colors aren't invented. Also write a sweet 1-sentence Korean handwritten note ('note') in Han-gyeol's affectionate informal boyfriend voice ('자기야').`;
-
-      const payload = {
-        contents: [{ role: "user", parts: [{ text: koreanText }] }],
-        systemInstruction: { parts: [{ text: sysPrompt }] },
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              subjectDescription: { type: "STRING" },
-              note: { type: "STRING" }
-            },
-            propertyOrdering: ["subjectDescription", "note"]
-          }
-        }
-      };
-
-      try {
-        const res = await fetchWithRetry(apiUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        }, 2);
-        const text = res?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return JSON.parse(text);
-      } catch (_) {
-        // 기본 폴백
+      const savedKey = (typeof apiKey !== "undefined" && apiKey) ? apiKey : (localStorage.getItem("hangyeol_gemini_key") || "");
+      if (savedKey) {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${savedKey}`;
+        const sysPrompt = `Convert the Korean scene into an English visual scene description (ONLY describe characters, pose, expression, clothing, setting, and lighting — DO NOT include art style words like 'webtoon' or 'anime'). Always include Lee Han-gyeol's appearance (${HANGYEOL_BASE}). If '치즈' (Cheese) appears, describe it as 'a chubby cream-beige British Shorthair cat'. Unless user's appearance is explicitly described, use natural POV framing. Also write a sweet 1-sentence Korean handwritten note ('note') in Han-gyeol's affectionate informal boyfriend voice ('자기야').`;
+        try {
+          const res = await fetchWithRetry(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: koreanText }] }],
+              systemInstruction: { parts: [{ text: sysPrompt }] },
+              generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                  type: "OBJECT",
+                  properties: { subjectDescription: { type: "STRING" }, note: { type: "STRING" } },
+                  propertyOrdering: ["subjectDescription", "note"]
+                }
+              }
+            })
+          }, 1);
+          const text = res?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) return JSON.parse(text);
+        } catch (_) {}
       }
 
+      // GitHub Pages (API 키 없음): 빠른 무료 번역 + 한결 고정 외형 결합
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 3500);
+        const trUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=ko&tl=en&dt=t&q=${encodeURIComponent(koreanText)}`;
+        const trRes = await fetch(trUrl, { signal: controller.signal });
+        clearTimeout(timer);
+        if (trRes.ok) {
+          const trJson = await trRes.json();
+          const translated = Array.isArray(trJson?.[0]) ? trJson[0].map(x => x[0]).join(" ").trim() : "";
+          if (translated) {
+            const hasCat = /치즈|고양이|뚱냥/.test(koreanText) ? ", a chubby cream-beige British Shorthair cat" : "";
+            return {
+              subjectDescription: `POV shot, ${HANGYEOL_BASE}${hasCat}, ${translated}`,
+              note: ""
+            };
+          }
+        }
+      } catch (_) {}
+
       return {
-        subjectDescription: `POV shot in a warm sunlit cozy home, ${HANGYEOL_BASE}, looking at viewer with a loving smile`,
+        subjectDescription: mapKoreanSceneKeywords(koreanText),
         note: ""
       };
     }
 
-    async function generateAIImage(finalPrompt, targetAspect) { const savedKey = (typeof apiKey !== "undefined" && apiKey) ? apiKey : (localStorage.getItem("hangyeol_gemini_key") || ""); if (savedKey) { try { const url1 = https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${savedKey}; const res1 = await fetchWithRetry(url1, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: finalPrompt }] }], generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: targetAspect } } }) }, 1); const part1 = res1?.candidates?.[0]?.content?.parts?.find(p => p.inlineData); if (part1?.inlineData?.data) return data:${part1.inlineData.mimeType \vert{}\vert{} "image/png"};base64,${part1.inlineData.data}; } catch (_) {} } const w = targetAspect === "4:3" ? 960 : 768; const h = targetAspect === "4:3" ? 720 : 960; const cleanPrompt = finalPrompt.slice(0, 500); for (const mdl of ["flux", "turbo"]) { try { const seed = Math.floor(Math.random() * 999999) + 1; const freeUrl = https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=${w}&height=${h}&seed=${seed}&model=${mdl}&nologo=true; const resp = await fetch(freeUrl); if (!resp.ok) continue; const blob = await resp.blob(); if (!blob || !blob.type.startsWith("image/")) continue; return await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onloadend = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); } catch (_) {} } throw new Error("Image generation returned empty"); }
+    function fetchExternalImageAsDataUrl(url, timeoutMs = 28000) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (!settled) {
+            settled = true;
+            reject(new Error("Image load timeout"));
+          }
+        }, timeoutMs);
+
+        img.onload = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          try {
+            const c = document.createElement("canvas");
+            c.width = img.naturalWidth || 768;
+            c.height = img.naturalHeight || 960;
+            const ctx = c.getContext("2d");
+            ctx.drawImage(img, 0, 0);
+            resolve(c.toDataURL("image/png"));
+          } catch (err) {
+            reject(err);
+          }
+        };
+        img.onerror = (e) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          reject(e);
+        };
+        img.src = url;
+      });
+    }
+
+    async function generateAIImage(finalPrompt, targetAspect) {
+      const savedKey = (typeof apiKey !== "undefined" && apiKey) ? apiKey : (localStorage.getItem("hangyeol_gemini_key") || "");
+
+      // 1) 미리보기 환경 또는 로컬 키가 있을 때만 Gemini 이미지 모델 호출
+      if (savedKey) {
+        try {
+          const url1 = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${savedKey}`;
+          const res1 = await fetchWithRetry(url1, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+              generationConfig: { responseModalities: ["IMAGE"], imageConfig: { aspectRatio: targetAspect } }
+            })
+          }, 1);
+          const part1 = res1?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+          if (part1?.inlineData?.data) {
+            return `data:${part1.inlineData.mimeType || "image/png"};base64,${part1.inlineData.data}`;
+          }
+        } catch (_) {}
+      }
+
+      // 2) GitHub Pages 등 외부 공개 배포 환경: 무료 AI 이미지 엔진 자동 연동
+      const w = targetAspect === "4:3" ? 960 : 768;
+      const h = targetAspect === "4:3" ? 720 : 960;
+      const compactPrompt = finalPrompt.replace(/\s+/g, " ").trim().slice(0, 420);
+
+      for (const mdl of ["flux", "turbo"]) {
+        const seed = Math.floor(Math.random() * 900000) + 100000 + (state.variationSeed * 37);
+        const freeUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(compactPrompt)}?width=${w}&height=${h}&seed=${seed}&model=${mdl}&nologo=true`;
+        try {
+          return await fetchExternalImageAsDataUrl(freeUrl, 28000);
+        } catch (_) {
+          try {
+            const resp = await fetch(freeUrl);
+            if (!resp.ok) continue;
+            const blob = await resp.blob();
+            if (!blob || !blob.type.startsWith("image/")) continue;
+            return await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          } catch (_2) {}
+        }
+      }
+
+      throw new Error("Image generation returned empty");
+    }
 
     async function runCaptureOrSketch(isRetry = false) {
       if (state.isGenerating) return;
@@ -1307,7 +1437,7 @@
       const exactWidth = state.mode === "polaroid" ? 400 : 460;
       const downloadName = getTargetDownloadFilename(new Date());
 
-      showToast("저장하는 중...", "💾");
+      showToast("원본 비율 그대로 고화질 PNG를 저장하고 있어요...", "💾");
 
       // 화면 축소(scale)의 영향을 전혀 받지 않는 독립 오프스크린 컨테이너 생성
       const sandbox = document.createElement("div");
