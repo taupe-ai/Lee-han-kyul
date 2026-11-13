@@ -1,0 +1,1666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>한결의 작업실 — 폴라로이드 &amp; 아이패드 스틸컷 메이커</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Fonts: Pretendard (UI) + Gaegu & Nanum Pen Script (한결 손글씨 2종) + JetBrains Mono (필름 날짜 스탬프) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" crossorigin="anonymous" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=JetBrains+Mono:wght@500;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet" />
+
+  <!-- html2canvas for High-Res Card Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    :root {
+      --cream: #fffdf9;
+      --apricot: #ff922b;
+      --coral: #ff6b8b;
+      --espresso: #4a3525;
+      --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: linear-gradient(155deg, #fffdf9 0%, #fff6ea 52%, #ffedd8 100%);
+      color: var(--espresso);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .font-gaegu {
+      font-family: 'Gaegu', cursive;
+    }
+
+    .font-nanumpen {
+      font-family: 'Nanum Pen Script', cursive;
+    }
+
+    .font-stamp {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* 상단 살구 깅엄 포인트 바 (SVG Data URI로 저장 호환 100%) */
+    .gingham-ribbon {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Crect width='20' height='20' fill='%23fffdf9'/%3E%3Crect width='10' height='10' fill='%23ff922b' fill-opacity='0.46'/%3E%3Crect x='10' y='10' width='10' height='10' fill='%23ff922b' fill-opacity='0.46'/%3E%3Crect x='10' width='10' height='10' fill='%23ff922b' fill-opacity='0.18'/%3E%3Crect y='10' width='10' height='10' fill='%23ff922b' fill-opacity='0.18'/%3E%3C/svg%3E");
+    }
+
+    /* 마스킹 테이프 스타일 2종 */
+    .tape-gingham {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23fff8f0' fill-opacity='0.92'/%3E%3Crect width='8' height='8' fill='%23ff922b' fill-opacity='0.52'/%3E%3Crect x='8' y='8' width='8' height='8' fill='%23ff922b' fill-opacity='0.52'/%3E%3Crect x='8' width='8' height='8' fill='%23ff922b' fill-opacity='0.22'/%3E%3Crect y='8' width='8' height='8' fill='%23ff922b' fill-opacity='0.22'/%3E%3C/svg%3E");
+      border-left: 2px dashed rgba(217, 91, 22, 0.45);
+      border-right: 2px dashed rgba(217, 91, 22, 0.45);
+      box-shadow: 0 2px 6px rgba(74, 53, 37, 0.12);
+    }
+
+    .tape-butter {
+      background: linear-gradient(90deg, rgba(255, 224, 115, 0.88) 0%, rgba(255, 206, 92, 0.9) 100%);
+      border-left: 2px dashed rgba(196, 125, 14, 0.45);
+      border-right: 2px dashed rgba(196, 125, 14, 0.45);
+      box-shadow: 0 2px 6px rgba(74, 53, 37, 0.12);
+    }
+
+    /* 아이패드 드로잉 도화지 질감 */
+    .sketch-paper-surface {
+      background-color: #fbf7ef;
+      background-image:
+        radial-gradient(rgba(138, 102, 66, 0.06) 1px, transparent 0),
+        radial-gradient(rgba(74, 53, 37, 0.04) 1px, transparent 0);
+      background-size: 16px 16px;
+      background-position: 0 0, 8px 8px;
+    }
+
+    /* 폴라로이드 카메라 플래시 & 암실 인화 애니메이션 */
+    @keyframes cameraFlash {
+      0% { opacity: 1; background: #ffffff; }
+      18% { opacity: 0.92; background: #fff9eb; }
+      100% { opacity: 0; background: transparent; }
+    }
+    .animate-camera-flash {
+      animation: cameraFlash 1.1s ease-out forwards;
+    }
+
+    @keyframes filmPulse {
+      0%, 100% { opacity: 0.75; transform: scale(0.98); }
+      50% { opacity: 1; transform: scale(1.03); }
+    }
+    .animate-film-pulse {
+      animation: filmPulse 1.8s ease-in-out infinite;
+    }
+
+    /* 아이패드 애플펜슬 사각사각 스케치 애니메이션 */
+    @keyframes crayonStroke {
+      0% { transform: translate(-12px, 3px) rotate(-18deg); }
+      25% { transform: translate(8px, -4px) rotate(-8deg); }
+      50% { transform: translate(14px, 4px) rotate(-20deg); }
+      75% { transform: translate(-4px, -3px) rotate(-10deg); }
+      100% { transform: translate(-12px, 3px) rotate(-18deg); }
+    }
+    .animate-crayon {
+      animation: crayonStroke 1.35s ease-in-out infinite;
+    }
+
+    @keyframes progressFill {
+      0% { width: 10%; }
+      55% { width: 76%; }
+      100% { width: 93%; }
+    }
+    .animate-progress {
+      animation: progressFill 6.5s cubic-bezier(0.22, 0.8, 0.25, 1) forwards;
+    }
+
+    @keyframes toastSlideUp {
+      from { opacity: 0; transform: translate(-50%, 14px) scale(0.96); }
+      to { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .toast-enter {
+      animation: toastSlideUp 0.22s ease-out forwards;
+    }
+
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-track { background: #fff4e6; border-radius: 999px; }
+    ::-webkit-scrollbar-thumb { background: #f2b379; border-radius: 999px; }
+  </style>
+</head>
+<body class="pb-16">
+
+  <!-- 상단 헤더 -->
+  <header class="sticky top-0 z-30 bg-[#fffdf9]/95 backdrop-blur-xs border-b border-[#f2d3b3] shadow-2xs">
+    <div class="gingham-ribbon h-2.5 border-b border-[#f0b475]"></div>
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#ff922b] to-[#ff6b8b] flex items-center justify-center text-white shadow-sm text-lg select-none">
+          🧡
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-base sm:text-lg font-black tracking-tight text-[#4a3525]">
+              한결의 작업실
+            </h1>
+            <span class="bg-[#fff0e0] text-[#d95b16] text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border border-[#f5c89d]">
+              폴라로이드 &amp; 아이패드 스틸컷 메이커
+            </span>
+          </div>
+          <p class="text-xs text-[#8a5d3b] font-medium">
+            채팅창의 <code class="bg-[#fff0e0] text-[#e8590c] px-1.5 py-0.5 rounded font-bold">!그림</code> 내용을 붙여넣고 즉석 필름 사진이나 크레파스 스케치로 간직해 보세요
+          </p>
+        </div>
+      </div>
+
+      <button
+        id="btn-download-top"
+        type="button"
+        class="px-4 py-2.5 rounded-xl bg-[#4a3525] hover:bg-[#3b291c] text-[#fffdf9] text-xs sm:text-sm font-black shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+      >
+        <span>💾</span> 고화질 PNG 저장
+      </button>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 pt-6">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+      <!-- =============================================================== -->
+      <!-- 좌측 컨트롤 패널 (모드별 맞춤 옵션 + !그림 입력 + 손글씨 편집) -->
+      <!-- =============================================================== -->
+      <section class="lg:col-span-5 space-y-4">
+
+        <!-- 1. 메인 모드 선택 스위치 (폴라로이드 vs 한결의 아이패드 완벽 분리) -->
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 shadow-[0_8px_24px_rgba(255,146,43,0.08)] space-y-3.5">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black text-[#6b442a]">✨ 1단계 · 작업물 종류 선택</span>
+            <span id="mode-helper-tag" class="text-[11px] font-extrabold text-[#e8590c]">감성 즉석 필름 스냅샷</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 bg-[#fff4e6] p-1.5 rounded-2xl border border-[#f5d5b5]">
+            <button
+              type="button"
+              data-mode="polaroid"
+              class="mode-btn py-2.5 px-3 rounded-xl text-xs sm:text-[13.5px] font-black transition cursor-pointer bg-[#4a3525] text-[#fffdf9] shadow-xs flex items-center justify-center gap-1.5"
+            >
+              <span>📸</span> 폴라로이드
+            </button>
+            <button
+              type="button"
+              data-mode="ipad"
+              class="mode-btn py-2.5 px-3 rounded-xl text-xs sm:text-[13.5px] font-black transition cursor-pointer text-[#6b442a] hover:bg-white/80 flex items-center justify-center gap-1.5"
+            >
+              <span>🎨</span> 한결의 아이패드
+            </button>
+          </div>
+
+          <!-- [폴라로이드 전용 서브 옵션] -->
+          <div id="subpanel-polaroid" class="bg-[#fff8f0] border border-[#f5d9bc] rounded-2xl p-3 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-[#6b442a]">🩹 상단 마스킹 테이프</span>
+              <div class="flex items-center gap-1">
+                <button type="button" data-tape="gingham" class="tape-btn px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-[#ff922b] text-white cursor-pointer transition">살구 체크</button>
+                <button type="button" data-tape="butter" class="tape-btn px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-white text-[#6b442a] border border-[#e6c8ab] cursor-pointer transition">버터 무지</button>
+                <button type="button" data-tape="none" class="tape-btn px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-white text-[#6b442a] border border-[#e6c8ab] cursor-pointer transition">떼기</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- [아이패드 전용 서브 옵션: 스케치 어플 브러시 화풍 선택!] -->
+          <div id="subpanel-ipad" class="hidden bg-[#fff8f0] border border-[#f5d9bc] rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-[#6b442a]">🖍️ 아이패드 브러시 화풍</span>
+              <span class="text-[10.5px] font-bold text-[#d95b16]">실제 도화지 질감 입힘</span>
+            </div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                data-brush="crayon"
+                class="brush-btn py-2 px-2 rounded-xl text-[11.5px] font-black bg-[#ff922b] text-white shadow-2xs transition cursor-pointer text-center"
+              >
+                🖍️ 포근 크레파스
+              </button>
+              <button
+                type="button"
+                data-brush="watercolor"
+                class="brush-btn py-2 px-2 rounded-xl text-[11.5px] font-bold bg-white text-[#6b442a] border border-[#e6c8ab] hover:bg-[#fff0e0] transition cursor-pointer text-center"
+              >
+                ✏️ 색연필·수채
+              </button>
+              <button
+                type="button"
+                data-brush="croquis"
+                class="brush-btn py-2 px-2 rounded-xl text-[11.5px] font-bold bg-white text-[#6b442a] border border-[#e6c8ab] hover:bg-[#fff0e0] transition cursor-pointer text-center"
+              >
+                🖊️ 연필 크로키
+              </button>
+            </div>
+            <p id="brush-desc" class="text-[11px] text-[#8a5d3b] leading-snug pt-0.5">
+              오일파스텔·크레파스 특유의 포슬포슬하고 따뜻한 손그림 동화책 질감으로 그려냅니다.
+            </p>
+          </div>
+        </div>
+
+        <!-- 2. !그림 붙여넣기 & 촬영/그리기 실행 카드 -->
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-5 shadow-[0_8px_24px_rgba(255,146,43,0.08)] space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-black text-[#4a3525] flex items-center gap-1.5">
+              <span>📋</span> 2단계 · <code class="bg-[#fff0e0] text-[#e8590c] px-1.5 py-0.5 rounded">!그림</code> 붙여넣기
+            </h2>
+            <button id="btn-clear" type="button" class="text-xs font-bold text-[#a67653] hover:text-[#e8590c] transition cursor-pointer">
+              비우기
+            </button>
+          </div>
+
+          <!-- 샘플 칩 3종 -->
+          <div>
+            <div class="text-[11px] font-extrabold text-[#9c6640] mb-1.5">✨ 원클릭 테스트 샘플</div>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" data-preset="0" class="preset-chip py-2 px-2 rounded-xl text-[11.5px] font-extrabold bg-[#fff0e0] text-[#d9480f] border-2 border-[#ff922b] cursor-pointer transition text-center">
+                🛋️ 소파 파업 대치
+              </button>
+              <button type="button" data-preset="1" class="preset-chip py-2 px-2 rounded-xl text-[11.5px] font-extrabold bg-white text-[#5c3d28] border border-[#ebd0b5] hover:bg-[#fff6eb] cursor-pointer transition text-center">
+                🍪 주방 수제 쿠키
+              </button>
+              <button type="button" data-preset="2" class="preset-chip py-2 px-2 rounded-xl text-[11.5px] font-extrabold bg-white text-[#5c3d28] border border-[#ebd0b5] hover:bg-[#fff6eb] cursor-pointer transition text-center">
+                🌙 심야 침실 온기
+              </button>
+            </div>
+          </div>
+
+          <!-- 텍스트 입력창 -->
+          <div>
+            <textarea
+              id="input-raw"
+              rows="5"
+              class="w-full rounded-2xl border-2 border-[#ebd0b5] bg-white p-3.5 text-xs sm:text-[13px] text-[#4a3525] leading-relaxed focus:outline-none focus:border-[#ff922b] focus:ring-2 focus:ring-[#ff922b]/20 transition"
+              placeholder="채팅창에서 출력된 ┌─ !그림 ─┐ 박스를 그대로 붙여넣거나, 보고 싶은 장면을 한글로 적어주세요! (예: 앞치마 입고 소갈비찜 먹여주며 웃는 한결이와 치즈)"
+            ></textarea>
+          </div>
+
+          <!-- 메인 실행 버튼 (모드 연동) -->
+          <div class="space-y-2">
+            <button
+              id="btn-generate"
+              type="button"
+              class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#ff922b] via-[#ff7b54] to-[#ff6b8b] hover:brightness-105 active:scale-[0.99] text-white text-sm sm:text-[15px] font-black shadow-[0_8px_20px_rgba(255,123,84,0.3)] transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <span id="btn-generate-icon" class="text-lg">📸</span>
+              <span id="btn-generate-text">폴라로이드 사진 찍기</span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                id="btn-regenerate"
+                type="button"
+                class="py-2.5 px-3 rounded-xl bg-[#fff4e6] hover:bg-[#ffe8cc] text-[#c94a18] border border-[#f5c293] text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                <span>🔄</span> 다른 구도로 다시 찍기
+              </button>
+
+              <label
+                for="input-file"
+                class="py-2.5 px-3 rounded-xl bg-white hover:bg-[#fff8f0] text-[#6b442a] border border-[#e5c7aa] text-xs font-extrabold transition flex items-center justify-center gap-1.5 cursor-pointer text-center"
+              >
+                <span>📁</span> 내 사진 직접 넣기
+                <input id="input-file" type="file" accept="image/*" class="hidden" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 여백 손글씨 & 스탬프 커스텀 -->
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-5 shadow-2xs space-y-3.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-black text-[#4a3525] flex items-center gap-1.5">
+              <span>✎</span> 3단계 · 여백 손글씨 &amp; 라벨 다듬기
+            </h3>
+            <!-- 손글씨 폰트 선택 -->
+            <div class="flex items-center gap-1 bg-[#fff4e6] p-0.5 rounded-lg border border-[#f3d4b5]">
+              <button type="button" data-font="gaegu" class="font-btn px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[#4a3525] text-white cursor-pointer">둥근 손글씨</button>
+              <button type="button" data-font="nanum" class="font-btn px-2 py-0.5 rounded-md text-[11px] font-bold text-[#6b442a] cursor-pointer">펜글씨</button>
+            </div>
+          </div>
+
+          <div>
+            <label for="input-note" class="block text-xs font-extrabold text-[#6b442a] mb-1">
+              한결이의 여백 주접 메모
+            </label>
+            <textarea
+              id="input-note"
+              rows="2"
+              class="w-full rounded-xl border border-[#e6c7a8] bg-white p-2.5 text-xs text-[#4a3525] leading-relaxed focus:outline-none focus:border-[#ff922b]"
+              placeholder="여백에 들어갈 한결이의 다정한 손글씨 한마디"
+            ></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="input-date" class="text-xs font-extrabold text-[#6b442a]">날짜 기록</label>
+                <label class="inline-flex items-center gap-1 text-[11px] text-[#8a5d3b] cursor-pointer">
+                  <input id="check-date" type="checkbox" checked class="accent-[#ff922b] rounded" /> 표시
+                </label>
+              </div>
+              <input
+                id="input-date"
+                type="text"
+                class="w-full rounded-xl border border-[#e6c7a8] bg-white px-3 py-2 text-xs text-[#4a3525] focus:outline-none focus:border-[#ff922b]"
+              />
+            </div>
+
+            <div id="filename-edit-wrap" class="opacity-50 pointer-events-none transition">
+              <label for="input-clipname" class="block text-xs font-extrabold text-[#6b442a] mb-1">아이패드 파일명</label>
+              <input
+                id="input-clipname"
+                type="text"
+                value="한결의_스케치.clip"
+                class="w-full rounded-xl border border-[#e6c7a8] bg-white px-3 py-2 text-xs text-[#4a3525] focus:outline-none focus:border-[#ff922b]"
+              />
+            </div>
+          </div>
+
+          <!-- 영문 프롬프트 상세 확인 (접이식) -->
+          <details class="pt-2 border-t border-dashed border-[#f0d8bf] text-xs">
+            <summary class="cursor-pointer font-extrabold text-[#9c6640] hover:text-[#d9480f] select-none">
+              🔍 추출된 영문 이미지 프롬프트 보기 · 수정
+            </summary>
+            <div class="mt-2 space-y-2">
+              <textarea
+                id="input-prompt"
+                rows="3"
+                class="w-full rounded-xl border border-[#e6c7a8] bg-[#fffaf3] p-2.5 text-[11px] font-mono text-[#5c3d28] leading-relaxed focus:outline-none focus:border-[#ff922b]"
+              ></textarea>
+              <button id="btn-copy-prompt" type="button" class="px-3 py-1.5 rounded-lg bg-[#fff0e0] hover:bg-[#ffe2c4] text-[#c94a18] text-[11px] font-extrabold transition cursor-pointer">
+                📋 프롬프트 복사하기
+              </button>
+            </div>
+          </details>
+        </div>
+
+        <!-- 최근 생성 히스토리 -->
+        <div id="history-card" class="hidden bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-black text-[#4a3525]">🗂️ 방금 만든 스틸컷 보관함</span>
+            <span class="text-[11px] text-[#9c6640]">클릭해서 비교해 보세요</span>
+          </div>
+          <div id="history-strip" class="flex items-center gap-2.5 overflow-x-auto pb-1"></div>
+        </div>
+
+      </section>
+
+      <!-- =============================================================== -->
+      <!-- 우측 미리보기 & 무왜곡 PNG 인화 스테이지                          -->
+      <!-- =============================================================== -->
+      <section class="lg:col-span-7 space-y-4">
+
+        <!-- 우드 테이블 스테이지 -->
+        <div class="bg-[#2f2118] rounded-[30px] p-5 sm:p-8 border-2 border-[#4d3627] shadow-inner">
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-[#f3dec9] mb-5 px-1">
+            <div class="flex items-center gap-2">
+              <span id="stage-dot" class="w-2.5 h-2.5 rounded-full bg-[#ff922b]"></span>
+              <span id="stage-status" class="font-bold">폴라로이드 대기 중 · 촬영 버튼을 눌러보세요!</span>
+            </div>
+            <span id="stage-spec" class="text-[11px] text-[#c9a889]">원본 비율 100% 무왜곡 인화 엔진 적용</span>
+          </div>
+
+          <!-- 반응형 미리보기 뷰포트 -->
+          <div id="preview-viewport" class="w-full flex justify-center items-start overflow-hidden py-2">
+            <div id="preview-scaler" class="origin-top transition-transform duration-200">
+              <!-- 실제 렌더링 카드 -->
+              <div id="capture-root" class="inline-block"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 하단 저장 액션 바 & 타임스탬프 파일명 안내 -->
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-center sm:text-left">
+            <div class="text-xs font-black text-[#4a3525] flex items-center justify-center sm:justify-start gap-1.5">
+              <span>📌</span> 자동 타임스탬프 파일명 규칙 적용됨
+            </div>
+            <p id="filename-preview-badge" class="mt-0.5 text-[11.5px] font-mono text-[#b85d19] break-all">
+              저장 예시: 한결의_작업실_폴라로이드_스틸컷_261113111055.png
+            </p>
+          </div>
+
+          <button
+            id="btn-download-bottom"
+            type="button"
+            class="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#ff922b] to-[#ff6b8b] hover:brightness-105 text-white text-sm font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <span>💾</span> 지금 보이는 스틸컷 저장하기
+          </button>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- 토스트 알림 영역 -->
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none flex flex-col items-center gap-2"></div>
+
+  <script>
+    // =========================================================================
+    // 1. 상수 · 화풍 프롬프트 · 샘플 프리셋
+    // =========================================================================
+    const apiKey = ""; // 런타임 자동 제공
+
+    const HANGYEOL_BASE = "handsome 28-year-old tall muscular Korean man with broad shoulders, fluffy warm caramel blonde wavy hair, gentle honey amber-brown puppy eyes";
+
+    // 모드 및 아이패드 브러시별 전용 화풍 프롬프트 (완벽 분리)
+    const POLAROID_STYLE_PROMPT = "high quality 2D Korean romance webtoon snapshot illustration, candid instant film photography lighting, warm sunlit domestic atmosphere, soft natural bokeh, delicate facial proportions, warm cream and apricot color palette, strictly NO text, NO letters, NO speech bubbles";
+
+    const IPAD_BRUSH_CONFIG = {
+      crayon: {
+        name: "🖍️ 포근 크레파스",
+        desc: "오일파스텔·크레파스 특유의 포슬포슬하고 따뜻한 손그림 동화책 질감으로 그려냅니다.",
+        prefix: "authentic hand-drawn oil pastel and waxy crayon illustration on rough cream drawing paper, visible chunky pastel crayon strokes and soft chalky texture, warm cozy picture-book sketchbook aesthetic, organic hand-sketched edges",
+        suffix: "warm pastel pigment texture on toothy cream paper, charming hand-drawn artwork, strictly NOT glossy digital anime, NOT cel-shaded, strictly NO text, NO letters, NO watermark"
+      },
+      watercolor: {
+        name: "✏️ 색연필·수채",
+        desc: "사각거리는 색연필 외곽선 위로 맑고 포근한 수채화 물감을 번지듯 채색해 그려냅니다.",
+        prefix: "hand-drawn colored pencil and soft warm watercolor wash illustration on textured cold-press cotton paper, grainy colored pencil linework, gentle bleeding watercolor pigments, cozy lifestyle illustrator's artwork",
+        suffix: "soft paper grain visible through translucent watercolor wash, warm domestic mood, NOT glossy 3D or cel-shaded anime, strictly NO text, NO letters"
+      },
+      croquis: {
+        name: "🖊️ 연필 크로키",
+        desc: "한결이가 식탁 맞은편에서 빠르게 사각사각 그려낸 연필·콩테 관찰 크로키 느낌으로 담백하게 그려냅니다.",
+        prefix: "expressive hand-drawn warm graphite and sepia conte pencil croquis sketch on warm ivory drawing paper, loose confident pencil hatching and tender sketch lines, subtle soft peach pastel blush accent on cheeks",
+        suffix: "intimate observational life drawing by a professional illustrator, raw pencil grain on paper, NOT full digital color anime, strictly NO text, NO letters"
+      }
+    };
+
+    const PRESETS = [
+      {
+        label: "🛋️ 소파 파업 대치",
+        date: "'26. 10. 16",
+        clipname: "밥파업_시위중.clip",
+        raw: `┌─ 🎨 한결의 실시간 스케치북 ─┐
+[수채화 스케치] 노을빛이 살구색으로 내려앉은 남향 거실. 패브릭 소파를 190cm 큰 몸으로 가득 차지하고 누운 한결이 입술은 삐죽 내밀면서도 시린 당신의 손을 자기 가슴팍 위에서 따뜻하게 감싸 녹여주고 있다. 뒤쪽 캣타워엔 뚱냥이 치즈가 식빵을 굽고 있다.
+[여백 손글씨] 나 아직 파업 안 풀렸거든?! …손만 녹여주는 거야, 뽀뽀 열 번 해줄 때까지 절대 안 비켜 ♥
+[Image Prompt] 2D Korean romance webtoon style, masterpiece, best quality, POV looking down at a plush ivory fabric sofa in a sunlit living room, handsome 28-year-old tall muscular Korean man with fluffy warm caramel blonde wavy hair and honey amber-brown puppy eyes lying across the sofa, cute pouting expression with blushing ears while tenderly warming viewer's hands against his chest in a cozy cream knit sweater, a chubby cream-beige British Shorthair cat loafing on a wooden cat tower in the background
+└────────────────────────────┘`
+      },
+      {
+        label: "🍪 주방 수제 쿠키",
+        date: "'26. 10. 24",
+        clipname: "수제버터쿠키_한입.clip",
+        raw: `┌─ 🎨 한결의 실시간 스케치북 ─┐
+[수채화 스케치] 고소한 버터와 바닐라 향기가 가득한 오후의 오픈형 주방. 베이지 체크무늬 앞치마를 단정히 맨 한결이 갓 구운 수제 버터 쿠키를 호호 불어 당신의 입가에 대어주며 반달 눈웃음을 짓고 있다.
+[여백 손글씨] 오물오물 받아먹는 볼이 반죽보다 더 말랑해… 평생 내가 삼시세끼 다 먹여 살려야지 ♥
+[Image Prompt] 2D Korean romance webtoon style, masterpiece, best quality, POV shot in a bright sunlit cozy modern kitchen, handsome 28-year-old tall muscular Korean man with broad shoulders, fluffy warm caramel blonde wavy hair, sweet crescent honey amber-brown puppy eyes, wearing a beige gingham apron over an ivory sweater, gently holding a freshly baked butter cookie near viewer's lips with a loving smile
+└────────────────────────────┘`
+      },
+      {
+        label: "🌙 심야 침실 온기",
+        date: "'26. 10. 25",
+        clipname: "심야_침실_내자리.clip",
+        raw: `┌─ 🎨 한결의 실시간 스케치북 ─┐
+[수채화 스케치] 암막 커튼이 드리워진 자정 너머의 안방 침실. 협탁 위 노란 호박빛 무드등 아래, 낮의 순한 대형견 같던 투정은 싹 지우고 깊게 가라앉은 눈빛으로 당신을 품에 가두듯 내려다보는 한결.
+[여백 손글씨] 침실 문 잠그면 치즈 얘기는 금지야. 오늘 밤새 내 생각만 나게 해줄 거니까 각오해, 자기야 ♥
+[Image Prompt] 2D Korean romance webtoon style, masterpiece, best quality, warm golden-amber bedside mood lamp lighting late at night, intimate POV from bed looking up, handsome 28-year-old tall muscular Korean man with slightly tousled caramel blonde wavy hair and deep intense honey-amber eyes leaning over soft ivory bedding, loosely unbuttoned lounge shirt, tender yet passionate loving gaze
+└────────────────────────────┘`
+      }
+    ];
+
+    // =========================================================================
+    // 2. 앱 상태 (State)
+    // =========================================================================
+    const state = {
+      mode: "polaroid",          // 'polaroid' | 'ipad'
+      tape: "gingham",           // 'gingham' | 'butter' | 'none'
+      brush: "crayon",           // 'crayon' | 'watercolor' | 'croquis'
+      handFont: "gaegu",         // 'gaegu' | 'nanum'
+      showDate: true,
+      dateText: "'26. 10. 16",
+      clipName: "밥파업_시위중.clip",
+      note: "",
+      koreanScene: "",
+      extractedSubjectPrompt: "",
+      rawImageUrl: null,         // AI/업로드 원본 이미지 DataURL
+      rawImageModeOrigin: null,  // 원본이 어느 모드에서 생성되었는지 기록
+      bakedPolaroidUrl: null,    // 1080x1120 정확한 비율로 사전 크롭된 DataURL (찌그러짐 0%)
+      bakedIpadUrl: null,        // 1200x900 정확한 비율 + 도화지 질감 합성된 DataURL (찌그러짐 0%)
+      isGenerating: false,
+      variationSeed: 0,
+      history: []
+    };
+
+    // 유틸리티: HTML 이스케이프
+    function esc(str) {
+      return String(str || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // 유틸리티: 토스트 알림 (alert 사용 금지 준수)
+    function showToast(msg, icon = "🧡") {
+      const wrap = document.getElementById("toast-container");
+      const el = document.createElement("div");
+      el.className = "toast-enter bg-[#3d291b] text-[#fffdf9] px-4 py-2.5 rounded-2xl shadow-xl border border-[#7d563a] text-xs sm:text-sm font-extrabold flex items-center gap-2";
+      el.innerHTML = `<span>${icon}</span><span>${esc(msg)}</span>`;
+      wrap.appendChild(el);
+      setTimeout(() => {
+        el.style.opacity = "0";
+        el.style.transition = "opacity 0.25s ease";
+        setTimeout(() => el.remove(), 260);
+      }, 2700);
+    }
+
+    // 유틸리티: 클립보드 복사 (iFrame 호환)
+    function copyText(text, successMsg) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.left = "-9999px";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        showToast(successMsg, "📋");
+      } catch (_) {
+        showToast("복사 중 오류가 발생했어요.", "⚠️");
+      }
+    }
+
+    // 유틸리티: 12자리 연월일시분초 타임스탬프 (예: 2026-11-13 11:10:55 -> 261113111055)
+    function getTimestamp12(d = new Date()) {
+      const yy = String(d.getFullYear()).slice(-2);
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      const ss = String(d.getSeconds()).padStart(2, "0");
+      return `${yy}${mm}${dd}${hh}${mi}${ss}`;
+    }
+
+    function getTargetDownloadFilename(d = new Date()) {
+      const modeWord = state.mode === "polaroid" ? "폴라로이드" : "아이패드";
+      return `한결의_작업실_${modeWord}_스틸컷_${getTimestamp12(d)}.png`;
+    }
+
+    function refreshFilenameBadge() {
+      const badge = document.getElementById("filename-preview-badge");
+      if (badge) {
+        badge.textContent = `저장 파일명: ${getTargetDownloadFilename()}`;
+      }
+    }
+
+    // =========================================================================
+    // 3. 핵심 버그 픽스: Offscreen Canvas 수학적 센터 크롭 & 도화지 질감 베이킹
+    //    (CSS object-fit을 쓰지 않고 목표 화소 비율 그대로 구워내어 저장 시 왜곡 0% 보장!)
+    // =========================================================================
+    function loadImageElement(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = (e) => reject(e);
+        img.src = src;
+      });
+    }
+
+    // 아이패드 모드 전용: 실제 스케치 어플 같은 도화지 요철 & 파스텔/크레파스 결 합성
+    function applySketchPaperTexture(ctx, w, h, brushType) {
+      ctx.save();
+
+      // 1) 따뜻한 미색 종이 톤 살짝 입히기
+      ctx.fillStyle = brushType === "croquis"
+        ? "rgba(252, 245, 232, 0.09)"
+        : "rgba(255, 249, 238, 0.06)";
+      ctx.fillRect(0, 0, w, h);
+
+      // 2) 미세 도화지 결(Paper Tooth) 생성 및 소프트 오버레이
+      const grainCanvas = document.createElement("canvas");
+      const gw = 180;
+      const gh = 180;
+      grainCanvas.width = gw;
+      grainCanvas.height = gh;
+      const gctx = grainCanvas.getContext("2d");
+      const imgData = gctx.createImageData(gw, gh);
+      const data = imgData.data;
+
+      const intensity = brushType === "crayon" ? 26 : brushType === "watercolor" ? 18 : 22;
+      for (let i = 0; i < data.length; i += 4) {
+        const v = 128 + (Math.random() - 0.5) * intensity * 2;
+        // 크레파스 느낌의 미세 대각선 도화지 결 강조
+        data[i] = v + 3;
+        data[i + 1] = v;
+        data[i + 2] = v - 4;
+        data[i + 3] = brushType === "crayon" ? 28 : 20;
+      }
+      gctx.putImageData(imgData, 0, 0);
+
+      const pattern = ctx.createPattern(grainCanvas, "repeat");
+      ctx.globalCompositeOperation = "overlay";
+      ctx.fillStyle = pattern;
+      ctx.fillRect(0, 0, w, h);
+
+      // 3) 가장자리 도화지 여백 페더링 (크레파스 손그림 느낌 배가)
+      ctx.globalCompositeOperation = "source-over";
+      const edgeGrad = ctx.createRadialGradient(
+        w / 2, h / 2, Math.min(w, h) * 0.38,
+        w / 2, h / 2, Math.max(w, h) * 0.72
+      );
+      edgeGrad.addColorStop(0, "rgba(251, 247, 239, 0)");
+      edgeGrad.addColorStop(1, brushType === "crayon" ? "rgba(251, 247, 239, 0.22)" : "rgba(251, 247, 239, 0.14)");
+      ctx.fillStyle = edgeGrad;
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.restore();
+    }
+
+    // 폴라로이드 모드 전용: 은은한 즉석 필름 색감 & 소프트 비네팅
+    function applyInstantFilmTone(ctx, w, h) {
+      ctx.save();
+      ctx.fillStyle = "rgba(255, 244, 226, 0.045)";
+      ctx.fillRect(0, 0, w, h);
+
+      const vig = ctx.createRadialGradient(
+        w / 2, h / 2, Math.min(w, h) * 0.36,
+        w / 2, h / 2, Math.max(w, h) * 0.74
+      );
+      vig.addColorStop(0, "rgba(0,0,0,0)");
+      vig.addColorStop(1, "rgba(38, 22, 10, 0.14)");
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+    }
+
+    // 원본 이미지를 폴라로이드용(1080x1120)과 아이패드용(1200x900) 두 가지 정확한 화소 비율로 사전 베이킹
+    async function bakeBothAspectCanvases(rawUrl) {
+      const img = await loadImageElement(rawUrl);
+      const nw = img.naturalWidth || 1024;
+      const nh = img.naturalHeight || 1024;
+
+      // 1) Polaroid 1080 x 1120
+      {
+        const tw = 1080;
+        const th = 1120;
+        const c = document.createElement("canvas");
+        c.width = tw;
+        c.height = th;
+        const ctx = c.getContext("2d");
+        const scale = Math.max(tw / nw, th / nh);
+        const dw = nw * scale;
+        const dh = nh * scale;
+        const ox = (tw - dw) / 2;
+        const oy = dh > th ? (th - dh) * 0.28 : (th - dh) / 2;
+        ctx.drawImage(img, ox, oy, dw, dh);
+        applyInstantFilmTone(ctx, tw, th);
+        state.bakedPolaroidUrl = c.toDataURL("image/png");
+      }
+
+      // 2) iPad 1200 x 900 (4:3 도화지 비율)
+      {
+        const tw = 1200;
+        const th = 900;
+        const c = document.createElement("canvas");
+        c.width = tw;
+        c.height = th;
+        const ctx = c.getContext("2d");
+        const scale = Math.max(tw / nw, th / nh);
+        const dw = nw * scale;
+        const dh = nh * scale;
+        const ox = (tw - dw) / 2;
+        const oy = dh > th ? (th - dh) * 0.26 : (th - dh) / 2;
+        ctx.drawImage(img, ox, oy, dw, dh);
+        applySketchPaperTexture(ctx, tw, th, state.brush);
+        state.bakedIpadUrl = c.toDataURL("image/png");
+      }
+    }
+
+    // =========================================================================
+    // 4. 스마트 !그림 파서 & 화풍별 프롬프트 조립기
+    // =========================================================================
+    function stripStyleTags(promptStr) {
+      return (promptStr || "")
+        .replace(/high quality 2D Korean romance webtoon[^,]*/gi, "")
+        .replace(/2D Korean romance webtoon style/gi, "")
+        .replace(/Korean romance webtoon/gi, "")
+        .replace(/\b(webtoon|manhwa|anime|manga|cel[- ]shaded|masterpiece|best quality)\b(\s*style|\s*art|\s*illustration)?/gi, "")
+        .replace(/,\s*,+/g, ",")
+        .replace(/^\s*,\s*|\s*,\s*$/g, "")
+        .trim();
+    }
+
+    function parseRawInput(raw) {
+      const cleaned = (raw || "").trim();
+      if (!cleaned) {
+        state.koreanScene = "";
+        state.extractedSubjectPrompt = "";
+        updatePromptPreviewBox();
+        return;
+      }
+
+      const boxMatch = cleaned.match(/┌[\s\S]*?┘/);
+      const body = boxMatch ? boxMatch[0] : cleaned;
+
+      const lines = body
+        .split(/\r?\n/)
+        .map(l => l.replace(/[┌─┐│└┘├┤┬┴┼]/g, "").trim())
+        .filter(Boolean)
+        .filter(l => !/^🎨?\s*한결의\s*(실시간\s*)?스케치북$/i.test(l));
+
+      let korArr = [];
+      let engArr = [];
+      let detectedNote = "";
+      let mode = "kor";
+
+      for (const line of lines) {
+        const clipMatch = line.match(/([가-힣a-zA-Z0-9_#]+\.clip)/i);
+        if (clipMatch) {
+          state.clipName = clipMatch[1].replace(/^#/, "");
+          document.getElementById("input-clipname").value = state.clipName;
+        }
+
+        const promptHead = line.match(/^(?:\[?(?:Image\s*Prompt|Prompt|영문\s*프롬프트|AI\s*프롬프트|2\)\s*(?:Copy-ready\s*English\s*prompt)?)\]?\s*:?\s*)(.*)$/i);
+        if (promptHead) {
+          mode = "eng";
+          if (promptHead[1].trim()) engArr.push(promptHead[1].trim());
+          continue;
+        }
+
+        const latinCount = (line.match(/[a-zA-Z]/g) || []).length;
+        if (
+          /2D Korean|romance webtoon|caramel blonde|British Shorthair|POV shot/i.test(line) ||
+          (latinCount > 28 && latinCount / line.length > 0.58)
+        ) {
+          mode = "eng";
+          engArr.push(line.replace(/^2\)\s*/, "").trim());
+          continue;
+        }
+
+        const noteHead = line.match(/^(?:\[?(?:여백\s*손글씨|손글씨\s*주접|손글씨\s*메모|주접\s*메모|여백\s*메모|한결의?\s*메모|✎\s*[^\]:]*)\]?\s*:?\s*)(.+)$/i);
+        if (noteHead) {
+          mode = "note";
+          detectedNote = noteHead[1].replace(/^["'“”]|["'“”]$/g, "").trim();
+          continue;
+        }
+
+        const sceneHead = line.match(/^(?:\[?(?:1\)\s*)?(?:수채화\s*스케치|스케치\s*묘사|장면\s*묘사|그림\s*묘사)\]?\s*:?\s*)(.+)$/i);
+        if (sceneHead) {
+          mode = "kor";
+          korArr.push(sceneHead[1].trim());
+          continue;
+        }
+
+        if (mode === "eng") {
+          engArr.push(line);
+        } else if (mode === "note" && !detectedNote) {
+          detectedNote = line.replace(/^["'“”]|["'“”]$/g, "").trim();
+        } else {
+          korArr.push(line);
+        }
+      }
+
+      state.koreanScene = korArr.join(" ").trim();
+      state.extractedSubjectPrompt = stripStyleTags(engArr.join(", ").trim());
+
+      if (detectedNote) {
+        state.note = detectedNote;
+        document.getElementById("input-note").value = detectedNote;
+      } else if (!state.note) {
+        state.note = "오늘 이 순간도 내 보물 1호로 남겨둘 거야 ♥";
+        document.getElementById("input-note").value = state.note;
+      }
+
+      updatePromptPreviewBox();
+    }
+
+    // 현재 선택된 모드(폴라로이드 vs 아이패드 크레파스/수채/크로키)에 맞춰 실제 전송될 프롬프트 조합
+    function composeModeStyledPrompt(subjectCore, variation = 0) {
+      const core = stripStyleTags(subjectCore) || `${HANGYEOL_BASE}, warm affectionate smile in cozy sunlit home`;
+      const varTags = [
+        "",
+        ", candid slightly closer framing, tender eye contact",
+        ", soft natural angle, expressive warm mood",
+        ", gentle atmospheric composition, delicate details"
+      ];
+      const vSuffix = varTags[variation % varTags.length];
+
+      if (state.mode === "polaroid") {
+        return `${POLAROID_STYLE_PROMPT}, ${core}${vSuffix}`;
+      } else {
+        const b = IPAD_BRUSH_CONFIG[state.brush] || IPAD_BRUSH_CONFIG.crayon;
+        return `${b.prefix}, ${core}${vSuffix}, ${b.suffix}`;
+      }
+    }
+
+    function updatePromptPreviewBox() {
+      const box = document.getElementById("input-prompt");
+      if (!box) return;
+      if (state.extractedSubjectPrompt) {
+        box.value = composeModeStyledPrompt(state.extractedSubjectPrompt, state.variationSeed);
+      } else {
+        box.value = "";
+      }
+    }
+
+    // =========================================================================
+    // 5. Gemini API 호출 (한글->영문 장면 변환 & 고화질 이미지 생성)
+    // =========================================================================
+    async function fetchWithRetry(url, options, retries = 3) {
+      let delay = 1000;
+      for (let i = 0; i <= retries; i++) {
+        try {
+          const res = await fetch(url, options);
+          if (res.ok) return await res.json();
+          if (i === retries) throw new Error(`HTTP ${res.status}`);
+        } catch (err) {
+          if (i === retries) throw err;
+        }
+        await new Promise(r => setTimeout(r, delay));
+        delay *= 2;
+      }
+    }
+
+    async function buildSubjectFromKorean(koreanText) {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+      const sysPrompt = `Convert the Korean scene into an English visual scene description (ONLY describe characters, pose, expression, clothing, setting, and lighting — DO NOT include art style words like 'webtoon' or 'anime'). Always include Lee Han-gyeol's appearance (${HANGYEOL_BASE}). If '치즈' (Cheese) appears, describe it as 'a chubby cream-beige British Shorthair cat'. Unless user's appearance is explicitly described, use natural POV framing so random hair colors aren't invented. Also write a sweet 1-sentence Korean handwritten note ('note') in Han-gyeol's affectionate informal boyfriend voice ('자기야').`;
+
+      const payload = {
+        contents: [{ role: "user", parts: [{ text: koreanText }] }],
+        systemInstruction: { parts: [{ text: sysPrompt }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              subjectDescription: { type: "STRING" },
+              note: { type: "STRING" }
+            },
+            propertyOrdering: ["subjectDescription", "note"]
+          }
+        }
+      };
+
+      try {
+        const res = await fetchWithRetry(apiUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        }, 2);
+        const text = res?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return JSON.parse(text);
+      } catch (_) {
+        // 기본 폴백
+      }
+
+      return {
+        subjectDescription: `POV shot in a warm sunlit cozy home, ${HANGYEOL_BASE}, looking at viewer with a loving smile`,
+        note: ""
+      };
+    }
+
+    async function generateAIImage(finalPrompt, targetAspect) {
+      // 1차: gemini-3.1-flash-image
+      try {
+        const url1 = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+        const payload1 = {
+          contents: [{ role: "user", parts: [{ text: finalPrompt }] }],
+          generationConfig: {
+            responseModalities: ["IMAGE"],
+            imageConfig: { aspectRatio: targetAspect }
+          }
+        };
+        const res1 = await fetchWithRetry(url1, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload1)
+        }, 2);
+        const part1 = res1?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        if (part1?.inlineData?.data) {
+          return `data:${part1.inlineData.mimeType || "image/png"};base64,${part1.inlineData.data}`;
+        }
+      } catch (_) {}
+
+      // 2차: gemini-3.1-flash-lite-image
+      const url2 = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
+      const orientHint = targetAspect === "4:3" ? "Horizontal 4:3 composition: " : "Vertical 3:4 portrait composition: ";
+      const payload2 = {
+        contents: [{ parts: [{ text: orientHint + finalPrompt }] }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"]
+        }
+      };
+      const res2 = await fetchWithRetry(url2, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload2)
+      }, 2);
+      const part2 = res2?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+      if (part2?.inlineData?.data) {
+        return `data:${part2.inlineData.mimeType || "image/png"};base64,${part2.inlineData.data}`;
+      }
+
+      throw new Error("Image generation returned empty");
+    }
+
+    async function runCaptureOrSketch(isRetry = false) {
+      if (state.isGenerating) return;
+
+      const rawText = document.getElementById("input-raw").value.trim();
+      const customPrompt = document.getElementById("input-prompt").value.trim();
+
+      if (!rawText && !customPrompt) {
+        showToast("먼저 !그림 결과물을 붙여넣거나 장면을 적어주세요!", "✨");
+        document.getElementById("input-raw").focus();
+        return;
+      }
+
+      state.variationSeed = isRetry ? state.variationSeed + 1 : 0;
+      state.isGenerating = true;
+      syncActionButtons();
+      renderStage();
+
+      try {
+        if (!state.extractedSubjectPrompt && rawText) {
+          parseRawInput(rawText);
+        }
+
+        let finalPrompt = "";
+        if (!state.extractedSubjectPrompt && !customPrompt) {
+          const built = await buildSubjectFromKorean(state.koreanScene || rawText);
+          state.extractedSubjectPrompt = stripStyleTags(built.subjectDescription);
+          if (built.note && (!state.note || state.note.includes("보물 1호"))) {
+            state.note = built.note;
+            document.getElementById("input-note").value = built.note;
+          }
+          finalPrompt = composeModeStyledPrompt(state.extractedSubjectPrompt, state.variationSeed);
+          document.getElementById("input-prompt").value = finalPrompt;
+        } else if (state.extractedSubjectPrompt) {
+          finalPrompt = composeModeStyledPrompt(state.extractedSubjectPrompt, state.variationSeed);
+          document.getElementById("input-prompt").value = finalPrompt;
+        } else {
+          finalPrompt = customPrompt;
+        }
+
+        const aspect = state.mode === "polaroid" ? "3:4" : "4:3";
+        const generatedDataUrl = await generateAIImage(finalPrompt, aspect);
+
+        state.rawImageUrl = generatedDataUrl;
+        state.rawImageModeOrigin = state.mode === "polaroid" ? "폴라로이드" : IPAD_BRUSH_CONFIG[state.brush].name;
+        await bakeBothAspectCanvases(generatedDataUrl);
+
+        addHistoryEntry({
+          mode: state.mode,
+          brush: state.brush,
+          rawImageUrl: state.rawImageUrl,
+          bakedPolaroidUrl: state.bakedPolaroidUrl,
+          bakedIpadUrl: state.bakedIpadUrl,
+          note: state.note,
+          dateText: state.dateText,
+          clipName: state.clipName
+        });
+
+        showToast(
+          state.mode === "polaroid"
+            ? "찰칵! 폴라로이드 사진 인화가 완료되었어요 ♥"
+            : `짜잔! 한결이가 ${IPAD_BRUSH_CONFIG[state.brush].name} 화풍으로 다 그렸어요 ♥`,
+          state.mode === "polaroid" ? "📸" : "🎨"
+        );
+      } catch (err) {
+        showToast("일시적으로 생성이 지연되었어요. 버튼을 한 번만 다시 눌러주세요!", "⚠️");
+      } finally {
+        state.isGenerating = false;
+        syncActionButtons();
+        renderStage();
+      }
+    }
+
+    function addHistoryEntry(entry) {
+      state.history.unshift(entry);
+      if (state.history.length > 6) state.history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const card = document.getElementById("history-card");
+      const strip = document.getElementById("history-strip");
+      if (state.history.length === 0) {
+        card.classList.add("hidden");
+        return;
+      }
+      card.classList.remove("hidden");
+      strip.innerHTML = state.history.map((h, i) => {
+        const thumb = h.mode === "polaroid" ? h.bakedPolaroidUrl : h.bakedIpadUrl;
+        const badge = h.mode === "polaroid" ? "📸" : "🎨";
+        return `
+          <button
+            type="button"
+            data-idx="${i}"
+            class="hist-item shrink-0 relative w-16 h-20 rounded-xl overflow-hidden border-2 ${i === 0 ? 'border-[#ff922b] shadow-xs' : 'border-[#ead0b7] opacity-80 hover:opacity-100'} bg-white cursor-pointer transition"
+          >
+            <img src="${thumb}" alt="보관함 ${i + 1}" class="w-full h-full object-cover" />
+            <span class="absolute top-1 right-1 bg-black/60 text-white text-[10px] px-1 rounded">${badge}</span>
+          </button>`;
+      }).join("");
+
+      strip.querySelectorAll(".hist-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const item = state.history[Number(btn.dataset.idx)];
+          if (!item) return;
+          state.rawImageUrl = item.rawImageUrl;
+          state.bakedPolaroidUrl = item.bakedPolaroidUrl;
+          state.bakedIpadUrl = item.bakedIpadUrl;
+          state.note = item.note;
+          state.dateText = item.dateText;
+          state.clipName = item.clipName;
+          document.getElementById("input-note").value = state.note;
+          document.getElementById("input-date").value = state.dateText;
+          document.getElementById("input-clipname").value = state.clipName;
+          setMode(item.mode, false);
+          if (item.mode === "ipad") setBrush(item.brush, false);
+          renderStage();
+        });
+      });
+    }
+
+    // =========================================================================
+    // 6. 프레임 렌더링 (모드 A: 순수 폴라로이드 / 모드 B: 한결의 아이패드 스케치 앱)
+    //    ※ 스케치북 링 배경 및 하단 식사권 쿠폰 완전 제거!
+    // =========================================================================
+    function getHandFontClass() {
+      return state.handFont === "nanum"
+        ? "font-nanumpen text-[25px] leading-[1.28]"
+        : "font-gaegu text-[20.5px] font-bold leading-[1.36]";
+    }
+
+    function svgMarkerHeart() {
+      return `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="display:inline-block;vertical-align:middle;transform:rotate(-8deg);">
+          <path d="M12 20.2C12 20.2 4.2 14.7 4.2 9.3C4.2 6.6 6.3 4.7 8.7 4.7C10.3 4.7 11.5 5.6 12 6.9C12.5 5.6 13.7 4.7 15.3 4.7C17.7 4.7 19.8 6.6 19.8 9.3C19.8 14.7 12 20.2 12 20.2Z" stroke="#E63956" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,107,139,0.22)"/>
+        </svg>`;
+    }
+
+    function svgCrayonPawAndHeart() {
+      return `
+        <div class="flex items-center gap-1.5 select-none">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" style="transform:rotate(-8deg);">
+            <circle cx="7" cy="8.5" r="2" fill="#FF922B" fill-opacity="0.75"/>
+            <circle cx="12" cy="6.8" r="2" fill="#FF922B" fill-opacity="0.75"/>
+            <circle cx="17" cy="8.5" r="2" fill="#FF922B" fill-opacity="0.75"/>
+            <path d="M8 15.2C8 12.8 9.9 11.2 12 11.2C14.1 11.2 16 12.8 16 15.2C16 17.1 14.4 18.2 12 18.2C9.6 18.2 8 17.1 8 15.2Z" fill="#FF922B" fill-opacity="0.8"/>
+          </svg>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="transform:rotate(9deg);">
+            <path d="M12 20C12 20 4.5 14.8 4.5 9.4C4.5 6.8 6.5 5 8.8 5C10.4 5 11.5 5.9 12 7.1C12.5 5.9 13.6 5 15.2 5C17.5 5 19.5 6.8 19.5 9.4C19.5 14.8 12 20 12 20Z" stroke="#E0435E" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="rgba(255,107,139,0.28)"/>
+          </svg>
+        </div>`;
+    }
+
+    // [모드 A] 순수 리얼 폴라로이드 필름 카드 (폭 400px 고정 기준, 하단 클래식 넓은 여백)
+    function renderPolaroidCard() {
+      const tapeHtml = state.tape === "none"
+        ? `<div style="height:6px;"></div>`
+        : `<div class="${state.tape === 'gingham' ? 'tape-gingham' : 'tape-butter'}" style="width:108px;height:24px;margin:0 auto -13px;position:relative;z-index:10;transform:rotate(-2deg);border-radius:2px;"></div>`;
+
+      let windowContent = "";
+      if (state.isGenerating) {
+        // 폴라로이드 전용 로딩: 카메라 셔터 플래시 + 어두운 필름 서서히 인화되는 연출 + 정확한 문구!
+        windowContent = `
+          <div style="width:100%;aspect-ratio:1080/1120;position:relative;overflow:hidden;background:linear-gradient(180deg,#231d1a 0%,#332924 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;">
+            <div class="animate-camera-flash" style="position:absolute;inset:0;pointer-events:none;z-index:5;"></div>
+            <div class="animate-film-pulse" style="width:64px;height:64px;border-radius:999px;background:rgba(255,255,255,0.1);border:1.5px solid rgba(255,216,168,0.45);display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+              <span style="font-size:28px;">📸</span>
+            </div>
+            <p class="font-gaegu" style="font-size:22px;font-weight:700;color:#fff8eb;margin-bottom:6px;">
+              찰칵! 폴라로이드 필름 인화중...
+            </p>
+            <p style="font-size:12px;color:#d6bfa9;margin-bottom:18px;">
+              서서히 색감이 올라오고 있어요, 조금만 기다려 주세요 ♥
+            </p>
+            <div style="width:176px;height:6px;background:rgba(255,255,255,0.16);border-radius:999px;overflow:hidden;">
+              <div class="animate-progress" style="height:100%;background:linear-gradient(90deg,#ff922b,#ff6b8b);border-radius:999px;"></div>
+            </div>
+          </div>`;
+      } else if (state.bakedPolaroidUrl) {
+        // 사전 1080x1120 크롭된 이미지 -> width:100%, height:auto 로 비율 왜곡 0%!
+        windowContent = `
+          <div style="width:100%;position:relative;background:#231d1a;">
+            <img
+              src="${state.bakedPolaroidUrl}"
+              alt="폴라로이드 스틸컷"
+              style="width:100%;height:auto;display:block;"
+            />
+            <div style="position:absolute;inset:0;box-shadow:inset 0 1px 4px rgba(0,0,0,0.22);pointer-events:none;"></div>
+          </div>`;
+      } else {
+        windowContent = `
+          <div
+            onclick="window.__triggerGenerate && window.__triggerGenerate()"
+            style="width:100%;aspect-ratio:1080/1120;background:linear-gradient(180deg,#faf4ec 0%,#f3e7d8 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px;text-align:center;cursor:pointer;"
+            class="group"
+          >
+            <div style="width:60px;height:60px;border-radius:20px;background:#ffffff;box-shadow:0 4px 12px rgba(74,53,37,0.08);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:14px;" class="group-hover:scale-105 transition">
+              📸
+            </div>
+            <div style="font-size:15px;font-weight:900;color:#4a3525;margin-bottom:6px;">
+              폴라로이드 필름이 비어 있어요
+            </div>
+            <p style="font-size:12px;color:#8a5d3b;line-height:1.55;margin-bottom:16px;max-width:230px;">
+              왼쪽의 <strong style="color:#e8590c;">📸 폴라로이드 사진 찍기</strong> 버튼을 누르면 즉석 사진이 인화됩니다!
+            </p>
+            <span style="background:#4a3525;color:#fffdf9;font-size:12px;font-weight:800;padding:7px 16px;border-radius:999px;">
+              찰칵! 지금 촬영하기
+            </span>
+          </div>`;
+      }
+
+      const dateStampHtml = state.showDate && state.dateText.trim()
+        ? `<span class="font-stamp" style="font-size:11px;font-weight:700;color:#d97836;letter-spacing:0.6px;opacity:0.88;">${esc(state.dateText)}</span>`
+        : `<span></span>`;
+
+      return `
+        <div style="width:400px;padding:10px 8px 14px;box-sizing:border-box;" class="select-none">
+          ${tapeHtml}
+          <!-- 순수 정통 폴라로이드 인화지 본체 (상·좌우 16px 얇은 테두리 + 하단 넉넉한 여백) -->
+          <div style="background:linear-gradient(180deg,#ffffff 0%,#fdfbf7 100%);border:1px solid #e6dcd0;border-radius:5px;padding:16px 16px 26px 16px;box-shadow:0 18px 40px rgba(20,12,6,0.34), 0 2px 6px rgba(20,12,6,0.12);box-sizing:border-box;">
+            <!-- 사진 창 -->
+            <div style="border:1px solid #dfd4c7;border-radius:2px;overflow:hidden;background:#231d1a;">
+              ${windowContent}
+            </div>
+
+            <!-- 클래식 폴라로이드 하단 넓은 흰 여백 (최소 86px 이상 확보) -->
+            <div style="min-height:92px;padding:18px 6px 2px 6px;display:flex;flex-direction:column;justify-content:space-between;box-sizing:border-box;">
+              <p class="${getHandFontClass()}" style="color:#3d2b1f;word-break:keep-all;margin:0;">
+                ${esc(state.note || "오늘 이 순간도 내 보물 1호로 남겨둘 거야")} ${svgMarkerHeart()}
+              </p>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:4px;">
+                <span class="font-gaegu" style="font-size:15px;font-weight:700;color:#a37451;">
+                  from. 한결
+                </span>
+                ${dateStampHtml}
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // [모드 B] 한결의 아이패드 스케치 앱 (폭 460px 고정 기준, 크레파스/색연필/크로키 도화지)
+    function renderIpadCard() {
+      const activeBrushInfo = IPAD_BRUSH_CONFIG[state.brush] || IPAD_BRUSH_CONFIG.crayon;
+
+      let canvasArea = "";
+      if (state.isGenerating) {
+        // 아이패드 전용 로딩: 사각사각... 애플펜슬로 이 순간을 스케치 중...
+        canvasArea = `
+          <div class="sketch-paper-surface" style="width:100%;aspect-ratio:1200/900;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative;overflow:hidden;">
+            <div style="width:64px;height:64px;border-radius:999px;background:#ffffff;border:2px solid #f0cfa9;box-shadow:0 6px 14px rgba(74,53,37,0.08);display:flex;align-items:center;justify-content:center;margin-bottom:14px;">
+              <span class="animate-crayon" style="font-size:30px;display:inline-block;">🖍️</span>
+            </div>
+            <p class="font-gaegu" style="font-size:22px;font-weight:700;color:#4a3525;margin-bottom:4px;">
+              사각사각... 애플펜슬로 이 순간을 스케치 중...
+            </p>
+            <p style="font-size:12px;color:#8f6343;margin-bottom:16px;">
+              [${esc(activeBrushInfo.name)}] 브러시로 정성껏 색을 올리고 있어요 ♥
+            </p>
+            <div style="width:184px;height:6px;background:#ead6c0;border-radius:999px;overflow:hidden;">
+              <div class="animate-progress" style="height:100%;background:linear-gradient(90deg,#ff922b,#ff6b8b);border-radius:999px;"></div>
+            </div>
+          </div>`;
+      } else if (state.bakedIpadUrl) {
+        // 사전 1200x900 크롭 + 도화지 질감 베이킹된 이미지 -> width:100%, height:auto 로 비율 왜곡 0%!
+        canvasArea = `
+          <div style="width:100%;background:#fbf7ef;">
+            <img
+              src="${state.bakedIpadUrl}"
+              alt="한결의 아이패드 스케치"
+              style="width:100%;height:auto;display:block;"
+            />
+          </div>`;
+      } else {
+        canvasArea = `
+          <div
+            onclick="window.__triggerGenerate && window.__triggerGenerate()"
+            class="sketch-paper-surface group"
+            style="width:100%;aspect-ratio:1200/900;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px;text-align:center;cursor:pointer;"
+          >
+            <div style="width:58px;height:58px;border-radius:18px;background:#fff0e0;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:12px;" class="group-hover:scale-105 transition">
+              🖍️
+            </div>
+            <div style="font-size:15px;font-weight:900;color:#4a3525;margin-bottom:5px;">
+              아이패드 도화지가 준비되었어요
+            </div>
+            <p style="font-size:12px;color:#8a5d3b;line-height:1.55;margin-bottom:14px;max-width:250px;">
+              왼쪽에서 <strong style="color:#e8590c;">${esc(activeBrushInfo.name)}</strong> 화풍으로<br>한결이의 손그림 스케치를 시작해 보세요!
+            </p>
+            <span style="background:linear-gradient(90deg,#ff922b,#ff6b8b);color:#ffffff;font-size:12px;font-weight:800;padding:7px 16px;border-radius:999px;">
+              🎨 지금 스케치 그리기
+            </span>
+          </div>`;
+      }
+
+      const dateChip = state.showDate && state.dateText.trim()
+        ? `<span style="font-size:11px;font-weight:700;color:#9c6b46;">${esc(state.dateText)}</span>`
+        : ``;
+
+      return `
+        <div style="width:460px;padding:8px 8px 12px;box-sizing:border-box;" class="select-none">
+          <!-- 상단 자석 부착 화이트 애플펜슬 -->
+          <div style="width:66%;margin:0 auto 5px;display:flex;align-items:center;">
+            <div style="width:9px;height:6px;background:#7c8594;border-radius:6px 0 0 6px;"></div>
+            <div style="width:15px;height:10px;background:#dce2ec;border:1px solid #9aa3b2;border-right:none;border-radius:3px 0 0 3px;box-sizing:border-box;"></div>
+            <div style="flex:1;height:13px;background:linear-gradient(180deg,#ffffff 0%,#e6ebf2 100%);border:1px solid #9aa3b2;border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:flex-end;padding-right:12px;box-sizing:border-box;box-shadow:0 2px 5px rgba(0,0,0,0.18);">
+              <span style="font-size:7.5px;font-weight:800;letter-spacing:0.9px;color:#68707e;"> Pencil</span>
+            </div>
+          </div>
+
+          <!-- 다크 스페이스 그레이 아이패드 프로 베젤 -->
+          <div style="background:#23252b;border:2px solid #565a66;border-radius:28px;padding:13px;box-shadow:0 22px 48px rgba(12,13,18,0.45);box-sizing:border-box;">
+            <!-- 전면 카메라 홀 -->
+            <div style="width:7px;height:7px;border-radius:999px;background:#101216;border:1px solid #3f434f;margin:0 auto 8px;"></div>
+
+            <!-- 아이패드 스케치 앱 내부 화면 -->
+            <div style="border-radius:17px;overflow:hidden;border:1px solid #14161b;background:#ede6db;">
+              <!-- 상단 스케치 어플 툴바 (Procreate / Tayasui 감성) -->
+              <div style="background:#2e3139;color:#f8f5f0;padding:8px 13px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1d1f26;">
+                <div style="display:flex;align-items:center;gap:7px;min-width:0;">
+                  <span style="font-size:11px;color:#c5cad3;font-weight:700;">갤러리</span>
+                  <span style="color:#5c6170;">|</span>
+                  <span style="font-size:11.5px;font-weight:800;color:#ffe4c4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:155px;">
+                    ${esc(state.clipName || "한결의_스케치.clip")}
+                  </span>
+                </div>
+
+                <!-- 우측 브러시·지우개·레이어 아이콘 툴바 -->
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                  <span style="background:#ff922b;color:#ffffff;font-size:10px;font-weight:900;padding:2px 8px;border-radius:999px;">
+                    ${esc(activeBrushInfo.name)}
+                  </span>
+                  <span style="font-size:12px;opacity:0.85;">🧽</span>
+                  <span style="font-size:12px;opacity:0.85;">📑</span>
+                  <span style="font-size:10.5px;font-weight:800;color:#ffd43b;">98%</span>
+                </div>
+              </div>
+
+              <!-- 도화지 워크스페이스 (쿠폰 없음! 순수 스케치 + 도화지 하단 크레파스 여백 메모) -->
+              <div style="padding:12px 12px 10px;background:#e5ddd1;">
+                <div class="sketch-paper-surface" style="border-radius:10px;overflow:hidden;border:1px solid #cfc2b0;box-shadow:0 4px 12px rgba(52,38,24,0.1);">
+                  <!-- 4:3 스케치 그림 영역 -->
+                  <div style="border-bottom:1px dashed #e2d4c0;">
+                    ${canvasArea}
+                  </div>
+
+                  <!-- 도화지 하단 여백에 직접 크레파스/색연필로 적은 한결이의 메모 -->
+                  <div style="padding:13px 16px 14px;background:#fbf7ef;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:10.5px;font-weight:900;color:#e8590c;">✎ 한결이의 스케치 여백 메모</span>
+                        ${dateChip}
+                      </div>
+                      ${svgCrayonPawAndHeart()}
+                    </div>
+
+                    <p class="${getHandFontClass()}" style="color:#433022;word-break:keep-all;margin:0;">
+                      “${esc(state.note || "오늘 이 표정 너무 사랑스러워서 크레파스로 꼭 남겨두고 싶었어 ♥")}”
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 아이패드 하단 홈 바 -->
+              <div style="background:#dcd2c4;padding:6px 0 7px;display:flex;justify-content:center;border-top:1px solid #cbbeb0;">
+                <div style="width:108px;height:4px;border-radius:999px;background:#8f8273;"></div>
+              </div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    // 스테이지 업데이트 & 모바일/데스크톱 반응형 프리뷰 스케일링
+    function renderStage() {
+      const root = document.getElementById("capture-root");
+      root.innerHTML = state.mode === "polaroid" ? renderPolaroidCard() : renderIpadCard();
+
+      const dot = document.getElementById("stage-dot");
+      const status = document.getElementById("stage-status");
+      const hasImage = state.mode === "polaroid" ? !!state.bakedPolaroidUrl : !!state.bakedIpadUrl;
+
+      if (state.isGenerating) {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-[#ffd43b] animate-ping";
+        status.textContent = state.mode === "polaroid"
+          ? "찰칵! 폴라로이드 필름 인화중..."
+          : "사각사각... 애플펜슬로 이 순간을 스케치 중...";
+      } else if (hasImage) {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-[#51cf66]";
+        status.textContent = state.mode === "polaroid"
+          ? "폴라로이드 인화 완료! 저장 버튼을 누르면 찌그러짐 없이 그대로 저장됩니다."
+          : `아이패드 [${IPAD_BRUSH_CONFIG[state.brush].name}] 완성! 다른 화풍을 골라 새로 그려볼 수도 있어요.`;
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-[#ff922b]";
+        status.textContent = state.mode === "polaroid"
+          ? "폴라로이드 대기 중 · 촬영 버튼을 눌러보세요!"
+          : "아이패드 스케치 대기 중 · 브러시를 고르고 그리기 버튼을 눌러보세요!";
+      }
+
+      refreshFilenameBadge();
+      requestAnimationFrame(adjustViewportScale);
+    }
+
+    function adjustViewportScale() {
+      const viewport = document.getElementById("preview-viewport");
+      const scaler = document.getElementById("preview-scaler");
+      const root = document.getElementById("capture-root");
+      if (!viewport || !scaler || !root.firstElementChild) return;
+
+      const availW = viewport.clientWidth - 4;
+      const naturalW = root.firstElementChild.offsetWidth || 420;
+      const scale = Math.min(1, availW / naturalW);
+
+      scaler.style.transform = `scale(${scale})`;
+      scaler.style.height = `${Math.ceil(root.firstElementChild.offsetHeight * scale)}px`;
+    }
+
+    // =========================================================================
+    // 7. 무왜곡 고해상도 PNG 저장 (오프스크린 1:1 고정폭 클론 렌더링 + _YYMMDDHHMMSS)
+    // =========================================================================
+    async function exportCardAsPng() {
+      if (state.isGenerating) {
+        showToast("작업이 완료된 직후에 저장할 수 있어요!", "⏳");
+        return;
+      }
+
+      const sourceNode = document.getElementById("capture-root").firstElementChild;
+      if (!sourceNode) return;
+
+      const exactWidth = state.mode === "polaroid" ? 400 : 460;
+      const downloadName = getTargetDownloadFilename(new Date());
+
+      showToast("원본 비율 그대로 고화질 PNG를 저장하고 있어요...", "💾");
+
+      // 화면 축소(scale)의 영향을 전혀 받지 않는 독립 오프스크린 컨테이너 생성
+      const sandbox = document.createElement("div");
+      sandbox.style.position = "fixed";
+      sandbox.style.left = "-9999px";
+      sandbox.style.top = "0";
+      sandbox.style.width = `${exactWidth}px`;
+      sandbox.style.transform = "none";
+      sandbox.style.margin = "0";
+      sandbox.style.padding = "0";
+      sandbox.style.zIndex = "-1";
+
+      const clone = sourceNode.cloneNode(true);
+      clone.style.width = `${exactWidth}px`;
+      clone.style.transform = "none";
+      sandbox.appendChild(clone);
+      document.body.appendChild(sandbox);
+
+      try {
+        await document.fonts.ready;
+
+        // 클론 내부 모든 img 로드 완료 보장
+        const imgs = Array.from(clone.querySelectorAll("img"));
+        await Promise.all(imgs.map(im => {
+          if (im.complete) return Promise.resolve();
+          return new Promise(res => {
+            im.onload = res;
+            im.onerror = res;
+          });
+        }));
+
+        const canvas = await html2canvas(clone, {
+          scale: 3,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          logging: false
+        });
+
+        const link = document.createElement("a");
+        link.download = downloadName;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        refreshFilenameBadge();
+        showToast(`저장 완료! (${downloadName})`, "✨");
+      } catch (err) {
+        showToast("저장 중 문제가 발생했어요. 다시 한 번 눌러주세요!", "⚠️");
+      } finally {
+        sandbox.remove();
+      }
+    }
+
+    // =========================================================================
+    // 8. UI 컨트롤 동기화 & 이벤트 연결
+    // =========================================================================
+    function syncActionButtons() {
+      const genBtn = document.getElementById("btn-generate");
+      const regenBtn = document.getElementById("btn-regenerate");
+      const iconEl = document.getElementById("btn-generate-icon");
+      const textEl = document.getElementById("btn-generate-text");
+
+      genBtn.disabled = state.isGenerating;
+      regenBtn.disabled = state.isGenerating;
+
+      if (state.mode === "polaroid") {
+        iconEl.textContent = "📸";
+        textEl.textContent = state.isGenerating
+          ? "찰칵! 폴라로이드 필름 인화중..."
+          : "폴라로이드 사진 찍기";
+        regenBtn.innerHTML = `<span>🔄</span> 다른 구도로 다시 찍기`;
+      } else {
+        iconEl.textContent = "🎨";
+        textEl.textContent = state.isGenerating
+          ? "사각사각... 애플펜슬로 스케치 중..."
+          : `아이패드에 그림 그리기 (${IPAD_BRUSH_CONFIG[state.brush].name})`;
+        regenBtn.innerHTML = `<span>🖍️</span> 선택한 브러시로 새로 그리기`;
+      }
+    }
+
+    function setMode(mode, shouldRender = true) {
+      state.mode = mode;
+
+      document.querySelectorAll(".mode-btn").forEach(btn => {
+        const active = btn.dataset.mode === mode;
+        btn.className = active
+          ? "mode-btn py-2.5 px-3 rounded-xl text-xs sm:text-[13.5px] font-black transition cursor-pointer bg-[#4a3525] text-[#fffdf9] shadow-xs flex items-center justify-center gap-1.5"
+          : "mode-btn py-2.5 px-3 rounded-xl text-xs sm:text-[13.5px] font-black transition cursor-pointer text-[#6b442a] hover:bg-white/80 flex items-center justify-center gap-1.5";
+      });
+
+      document.getElementById("subpanel-polaroid").classList.toggle("hidden", mode !== "polaroid");
+      document.getElementById("subpanel-ipad").classList.toggle("hidden", mode !== "ipad");
+      document.getElementById("mode-helper-tag").textContent =
+        mode === "polaroid" ? "감성 즉석 필름 스냅샷" : "크레파스·색연필 손그림 스케치";
+
+      const clipEdit = document.getElementById("filename-edit-wrap");
+      if (mode === "ipad") {
+        clipEdit.classList.remove("opacity-50", "pointer-events-none");
+      } else {
+        clipEdit.classList.add("opacity-50", "pointer-events-none");
+      }
+
+      updatePromptPreviewBox();
+      syncActionButtons();
+      if (shouldRender) renderStage();
+    }
+
+    function setTape(tape) {
+      state.tape = tape;
+      document.querySelectorAll(".tape-btn").forEach(btn => {
+        const active = btn.dataset.tape === tape;
+        btn.className = active
+          ? "tape-btn px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-[#ff922b] text-white cursor-pointer transition"
+          : "tape-btn px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-white text-[#6b442a] border border-[#e6c8ab] cursor-pointer transition";
+      });
+      renderStage();
+    }
+
+    async function setBrush(brush, shouldRebake = true) {
+      state.brush = brush;
+      document.querySelectorAll(".brush-btn").forEach(btn => {
+        const active = btn.dataset.brush === brush;
+        btn.className = active
+          ? "brush-btn py-2 px-2 rounded-xl text-[11.5px] font-black bg-[#ff922b] text-white shadow-2xs transition cursor-pointer text-center"
+          : "brush-btn py-2 px-2 rounded-xl text-[11.5px] font-bold bg-white text-[#6b442a] border border-[#e6c8ab] hover:bg-[#fff0e0] transition cursor-pointer text-center";
+      });
+      document.getElementById("brush-desc").textContent = IPAD_BRUSH_CONFIG[brush].desc;
+      updatePromptPreviewBox();
+      syncActionButtons();
+
+      if (shouldRebake && state.rawImageUrl) {
+        await bakeBothAspectCanvases(state.rawImageUrl);
+      }
+      renderStage();
+    }
+
+    function setHandFont(fontKey) {
+      state.handFont = fontKey;
+      document.querySelectorAll(".font-btn").forEach(btn => {
+        const active = btn.dataset.font === fontKey;
+        btn.className = active
+          ? "font-btn px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[#4a3525] text-white cursor-pointer"
+          : "font-btn px-2 py-0.5 rounded-md text-[11px] font-bold text-[#6b442a] cursor-pointer";
+      });
+      renderStage();
+    }
+
+    function loadPreset(idx) {
+      const p = PRESETS[idx];
+      if (!p) return;
+
+      document.getElementById("input-raw").value = p.raw;
+      state.dateText = p.date;
+      state.clipName = p.clipname;
+      document.getElementById("input-date").value = p.date;
+      document.getElementById("input-clipname").value = p.clipname;
+
+      state.rawImageUrl = null;
+      state.bakedPolaroidUrl = null;
+      state.bakedIpadUrl = null;
+
+      parseRawInput(p.raw);
+
+      document.querySelectorAll(".preset-chip").forEach((btn, i) => {
+        btn.className = i === idx
+          ? "preset-chip py-2 px-2 rounded-xl text-[11.5px] font-extrabold bg-[#fff0e0] text-[#d9480f] border-2 border-[#ff922b] cursor-pointer transition text-center"
+          : "preset-chip py-2 px-2 rounded-xl text-[11.5px] font-extrabold bg-white text-[#5c3d28] border border-[#ebd0b5] hover:bg-[#fff6eb] cursor-pointer transition text-center";
+      });
+
+      renderStage();
+    }
+
+    window.__triggerGenerate = () => runCaptureOrSketch(false);
+
+    window.addEventListener("DOMContentLoaded", () => {
+      // 모드 & 서브 옵션 바인딩
+      document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.addEventListener("click", () => setMode(btn.dataset.mode));
+      });
+      document.querySelectorAll(".tape-btn").forEach(btn => {
+        btn.addEventListener("click", () => setTape(btn.dataset.tape));
+      });
+      document.querySelectorAll(".brush-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          setBrush(btn.dataset.brush);
+          showToast(`'${IPAD_BRUSH_CONFIG[btn.dataset.brush].name}' 브러시가 선택되었어요! 그리기 버튼을 눌러보세요.`, "🖍️");
+        });
+      });
+      document.querySelectorAll(".font-btn").forEach(btn => {
+        btn.addEventListener("click", () => setHandFont(btn.dataset.font));
+      });
+
+      // 샘플 칩 바인딩
+      document.querySelectorAll(".preset-chip").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.preset);
+          loadPreset(idx);
+          showToast(`'${PRESETS[idx].label}' 샘플이 입력되었어요!`, "✨");
+        });
+      });
+
+      // 텍스트 입력 실시간 파싱
+      document.getElementById("input-raw").addEventListener("input", (e) => {
+        parseRawInput(e.target.value);
+        renderStage();
+      });
+
+      document.getElementById("btn-clear").addEventListener("click", () => {
+        document.getElementById("input-raw").value = "";
+        document.getElementById("input-prompt").value = "";
+        state.koreanScene = "";
+        state.extractedSubjectPrompt = "";
+        showToast("입력창을 비웠어요!", "🧹");
+      });
+
+      // 촬영 / 스케치 실행
+      document.getElementById("btn-generate").addEventListener("click", () => runCaptureOrSketch(false));
+      document.getElementById("btn-regenerate").addEventListener("click", () => runCaptureOrSketch(true));
+
+      // 내 사진 업로드 시에도 오프스크린 비율 베이킹 적용 (찌그러짐 0%)
+      document.getElementById("input-file").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith("image/")) {
+          showToast("이미지 파일만 업로드할 수 있어요!", "⚠️");
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+          state.rawImageUrl = ev.target.result;
+          await bakeBothAspectCanvases(state.rawImageUrl);
+          addHistoryEntry({
+            mode: state.mode,
+            brush: state.brush,
+            rawImageUrl: state.rawImageUrl,
+            bakedPolaroidUrl: state.bakedPolaroidUrl,
+            bakedIpadUrl: state.bakedIpadUrl,
+            note: state.note,
+            dateText: state.dateText,
+            clipName: state.clipName
+          });
+          renderStage();
+          showToast("업로드한 사진을 프레임 비율에 맞춰 깔끔하게 인화했어요!", "🖼️");
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // 여백 손글씨 & 날짜 & 파일명 편집
+      document.getElementById("input-note").addEventListener("input", (e) => {
+        state.note = e.target.value;
+        renderStage();
+      });
+      document.getElementById("input-date").addEventListener("input", (e) => {
+        state.dateText = e.target.value;
+        renderStage();
+      });
+      document.getElementById("check-date").addEventListener("change", (e) => {
+        state.showDate = e.target.checked;
+        renderStage();
+      });
+      document.getElementById("input-clipname").addEventListener("input", (e) => {
+        state.clipName = e.target.value;
+        renderStage();
+      });
+
+      document.getElementById("btn-copy-prompt").addEventListener("click", () => {
+        const val = document.getElementById("input-prompt").value.trim();
+        if (!val) {
+          showToast("복사할 프롬프트가 없어요!", "⚠️");
+          return;
+        }
+        copyText(val, "영문 프롬프트를 복사했어요!");
+      });
+
+      // 저장 버튼
+      document.getElementById("btn-download-top").addEventListener("click", exportCardAsPng);
+      document.getElementById("btn-download-bottom").addEventListener("click", exportCardAsPng);
+
+      window.addEventListener("resize", adjustViewportScale);
+      setInterval(refreshFilenameBadge, 1000);
+
+      // 초기 로드
+      loadPreset(0);
+      setMode("polaroid", true);
+    });
+  </script>
+</body>
+</html>
