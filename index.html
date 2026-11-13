@@ -395,7 +395,6 @@
               <span id="stage-dot" class="w-2.5 h-2.5 rounded-full bg-[#ff922b]"></span>
               <span id="stage-status" class="font-bold">폴라로이드 대기 중 · 촬영 버튼을 눌러보세요!</span>
             </div>
-            <span id="stage-spec" class="text-[11px] text-[#c9a889]">원본 비율 100% 무왜곡 인화 엔진 적용</span>
           </div>
 
           <!-- 반응형 미리보기 뷰포트 -->
@@ -1350,7 +1349,7 @@
       const exactWidth = state.mode === "polaroid" ? 400 : 460;
       const downloadName = getTargetDownloadFilename(new Date());
 
-      showToast("원본 비율 그대로 고화질 PNG를 저장하고 있어요...", "💾");
+      showToast("저장하는 중...", "💾");
 
       // 화면 축소(scale)의 영향을 전혀 받지 않는 독립 오프스크린 컨테이너 생성
       const sandbox = document.createElement("div");
