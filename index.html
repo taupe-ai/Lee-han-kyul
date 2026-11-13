@@ -152,14 +152,6 @@
           </p>
         </div>
       </div>
-
-      <!--button
-        id="btn-download-top"
-        type="button"
-        class="px-4 py-2.5 rounded-xl bg-[#4a3525] hover:bg-[#3b291c] text-[#fffdf9] text-xs sm:text-sm font-black shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-      >
-        <span>💾</span> 고화질 PNG 저장
-      </button-->
     </div>
   </header>
 
@@ -416,20 +408,7 @@
         </div>
 
         <!-- 하단 저장 액션 바 & 타임스탬프 파일명 안내 -->
-        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div class="text-center sm:text-left">
-            <div class="text-xs font-black text-[#4a3525] flex items-center justify-center sm:justify-start gap-1.5">
-            </div>
-          </div>
-
-          <button
-            id="btn-download-bottom"
-            type="button"
-            class="w-full sm:w-auto shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#ff922b] to-[#ff6b8b] hover:brightness-105 text-white text-sm font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>💾</span> 지금 보이는 스틸컷 저장하기
-          </button>
-        </div>
+        <div class="bg-[#fffdf9] border-2 border-[#f2d2b3] rounded-3xl p-4 shadow-xs"><button id="btn-download-bottom" type="button" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#ff922b] to-[#ff6b8b] hover:brightness-105 text-white text-sm sm:text-[15px] font-black shadow-md transition flex items-center justify-center gap-2 cursor-pointer"><span>💾</span> 지금 보이는 스틸컷 저장하기</button></div>
 
       </section>
     </div>
@@ -1647,8 +1626,7 @@
       });
 
       // 저장 버튼
-      document.getElementById("btn-download-top").addEventListener("click", exportCardAsPng);
-      document.getElementById("btn-download-bottom").addEventListener("click", exportCardAsPng);
+      document.getElementById("btn-download-bottom")?.addEventListener("click", exportCardAsPng);
 
       window.addEventListener("resize", adjustViewportScale);
       setInterval(refreshFilenameBadge, 1000);
